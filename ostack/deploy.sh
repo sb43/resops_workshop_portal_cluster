@@ -8,15 +8,15 @@ export TF_VAR_name="$(awk -v var="$PORTAL_DEPLOYMENT_REFERENCE" 'BEGIN {print to
 export TF_VAR_DEPLOYMENT_KEY_PATH="$PUBLIC_KEY"
 
 # Launch provisioning of the infrastructure
-cd terraform || exit
-terraform apply
-cd ..
+cd ostack/terraform || exit
+terraform apply -parallelism=10 -input=false -state=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate'
+cd ../..
 
 # Extract master ip from
-master_ip=$(terraform output -state='terraform/terraform.tfstate' MASTER_IP)
+master_ip=$(terraform output -state=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' MASTER_IP)
 
 # Extract volumes mapping from TF state file
-./volume_parser.py 'terraform/terraform.tfstate' 'ostack_volumes_mapping.json'
+./ostack/volume_parser.py $PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' $PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/ostack_volumes_mapping.json'
 
 # Check if ssh-agent is running
 eval "$(ssh-agent -s)" &> /dev/null
@@ -24,7 +24,7 @@ ssh-add $PRIVATE_KEY &> /dev/null
 
 # Launch Ansible
 cd ansible || exit
-TF_STATE='../terraform/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "master_ip=$master_ip" -u centos deployment.yml --tags live
+TF_STATE=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "master_ip=$master_ip" --tags=live -u centos -b deployment.yml
 
 # Kill local ssh-agent
 eval "$(ssh-agent -k)"
