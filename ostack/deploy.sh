@@ -7,7 +7,7 @@ set -e
 export TF_VAR_name="$(awk -v var="$PORTAL_DEPLOYMENT_REFERENCE" 'BEGIN {print tolower(var)}')"
 export TF_VAR_DEPLOYMENT_KEY_PATH="$PUBLIC_KEY"
 
-echo TF_VAR_DEPLOYMENT_KEY_PATH
+echo $TF_VAR_DEPLOYMENT_KEY_PATH
 
 # Launch provisioning of the infrastructure
 cd ostack/terraform || exit
@@ -25,7 +25,7 @@ eval "$(ssh-agent -s)" &> /dev/null
 ssh-add $PRIVATE_KEY &> /dev/null
 
 # Launch Ansible
-cd ansible || exit
+cd ostack/ansible || exit
 TF_STATE=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "master_ip=$master_ip" --tags=live -u centos -b deployment.yml
 
 # Kill local ssh-agent
