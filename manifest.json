@@ -1,0 +1,14 @@
+{
+  "applicationName": "ResOps - OpenLava deployment",
+  "contactEmail": "dario@ebi.ac.uk",
+  "about": "An OpenLava deployment for the ResOps training",
+  "version": "0.1",
+  "cloudProviders": [{
+      "cloudProvider": "OSTACK",
+      "path": "ostack"
+    }
+  ],
+  "inputs": ["nodes"],
+  "deploymentParameters": ["floating_pool", "external_net_uuid", "master_image_id", "node_image_id", "nfs_image_id", "availability_zone", "master_flavor", "node_flavor", "nfs_flavor"],
+  "outputs": ["MASTER_IP"]
+}
