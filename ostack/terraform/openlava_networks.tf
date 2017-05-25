@@ -11,15 +11,9 @@ resource "openstack_networking_subnet_v2" "openlava_subnet" {
   dns_nameservers = ["8.8.8.8", "8.8.4.4"]
 }
 
-resource "openstack_networking_router_v2" "openlava_router" {
-  region           = ""
-  name             = "${var.name}_router"
-  external_gateway = "${var.external_net_uuid}"
-}
-
 resource "openstack_networking_router_interface_v2" "router_interface_1" {
   region    = ""
-  router_id = "${openstack_networking_router_v2.openlava_router.id}"
+  router_id = "b7713712-e930-420c-b76d-eb416adc86be"
   subnet_id = "${openstack_networking_subnet_v2.openlava_subnet.id}"
 }
 
