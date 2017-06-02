@@ -111,5 +111,5 @@ resource "openstack_compute_instance_v2" "openlava_nodes" {
 }
 
 output "MASTER_IP" {
-  value = "${openstack_compute_instance_v2.openlava_master.access_ip_v4}"
+  value = "${openstack_networking_floatingip_v2.openlava_floatip.address}"
 }
