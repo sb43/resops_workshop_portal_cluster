@@ -157,6 +157,13 @@
       delegate_to: "{{ inventory_hostname }}" #Otherwise rsync uses as source
       tags: ['live']                          #the control machine
 
+      # We do this AFTER copying stuff over to the new location as we're
+      # only cleaning the local VM here, we still need the deployment key in
+      # the NFS share.
+    - name: Remove all SSH keys and inject user key
+      authorized_key: user={{ ansible_user }} key="{{lookup('env','ssh_key')}}" exclusive=yes state=present
+      tags: ['live']
+
     - name: Make selinux happy with the home mountpoint
       command: semanage fcontext -a -e /home /exports/home
       changed_when: false
@@ -263,6 +270,10 @@
       changed_when: false
       tags: ['live']
 
+    - name: Remove all SSH keys and inject user key local to the VMs
+      authorized_key: user={{ ansible_user }} key="{{lookup('env','ssh_key')}}" exclusive=yes state=present
+      tags: ['live']
+
     - name: Mount NFS share
       include: roles/common/tasks/nfs_clients.yml nfsserver="{{hostvars[groups.openlava_nfs[0]].ansible_default_ipv4.address}}" nfspath={{ item.nfspath }} nfsmount={{ item.nfsmount }}
       with_items:
@@ -283,8 +294,6 @@
     ansible_ssh_pipelining: yes
 
   tasks:
-      # We need to increase the number of SSH connection the master node can handle to allow Ansible to do
-      # its work properly
     - name: Put SSH MaxSessions on Master back to normal
       lineinfile: dest=/etc/ssh/sshd_config regexp="^MaxSessions" line="MaxSessions 10" state=present
       become: yes
@@ -308,3 +317,7 @@
         module: wait_for host={{ master_ip }} search_regex=OpenSSH port=22 delay=5
       become: no
       tags: ["live"]
+
+    - name: Make sure only user key is autorised on the VMs via NFS
+      authorized_key: user={{ ansible_user }} key="{{lookup('env','ssh_key')}}" exclusive=yes state=present
+      tags: ['live']
