@@ -7,14 +7,17 @@
     ansible_ssh_pipelining: yes
 
   tasks:
-    - name: Wait for the master node
+    - name: Wait for the bastion node
       local_action:
-        module: wait_for host={{ master_ip }} search_regex=OpenSSH port=22 delay=5
+        module: wait_for host="{{ bastion_ip }}" search_regex=OpenSSH port=22 delay=5
       tags: ["live"]
 
-    - name: Waiting until SSH allows login
+    - name: debug
+      debug: msg="{{ bastion_ip }}"
+
+    - name: Waiting until SSH allows login on Master
       local_action:
-        module: shell ssh -tt -o ConnectTimeout=5 -o ControlMaster=no -o StrictHostKeyChecking=no centos@{{ master_ip }} echo "\$HOME ready"
+        module: shell ssh -tt -o ConnectTimeout=5 -o ControlMaster=no -o StrictHostKeyChecking=no centos@{{ groups['openlava_master'][0] }} echo "\$HOME ready"
       register: ssh_conn
       changed_when: false
       failed_when: false
@@ -58,7 +61,7 @@
       until: compute_nodes_online.finished
       retries: 300
       with_items: "{{ compute_nodes.results }}"
-  #    no_log: true
+      no_log: true
       tags: ['live']
 
     - name: Wait for the NFS server to come online
@@ -122,11 +125,11 @@
       changed_when: false
       tags: ['live']
 
-    - name: Update everything to latest version
-      yum: name=* state=latest
+    # - name: Update everything to latest version
+    #   yum: name=* state=latest
 
     - name: Install NFS tools
-      yum: name=nfs-utils state=latest
+      yum: name=nfs-utils state=present
 
   handlers:
     - include: roles/common/handlers/main.yml
@@ -156,13 +159,6 @@
       when: format_volume.results[0].changed
       delegate_to: "{{ inventory_hostname }}" #Otherwise rsync uses as source
       tags: ['live']                          #the control machine
-
-      # We do this AFTER copying stuff over to the new location as we're
-      # only cleaning the local VM here, we still need the deployment key in
-      # the NFS share.
-    - name: Remove all SSH keys and inject user key
-      authorized_key: user={{ ansible_user }} key="{{lookup('env','ssh_key')}}" exclusive=yes state=present
-      tags: ['live']
 
     - name: Make selinux happy with the home mountpoint
       command: semanage fcontext -a -e /home /exports/home
@@ -270,10 +266,6 @@
       changed_when: false
       tags: ['live']
 
-    - name: Remove all SSH keys and inject user key local to the VMs
-      authorized_key: user={{ ansible_user }} key="{{lookup('env','ssh_key')}}" exclusive=yes state=present
-      tags: ['live']
-
     - name: Mount NFS share
       include: roles/common/tasks/nfs_clients.yml nfsserver="{{hostvars[groups.openlava_nfs[0]].ansible_default_ipv4.address}}" nfspath={{ item.nfspath }} nfsmount={{ item.nfsmount }}
       with_items:
@@ -313,13 +305,3 @@
       become: yes
       when: sshd_max_sessions.changed or sshd_max_startups.changed
       tags: ["live"]
-
-    - name: Wait for SSH to come back
-      local_action:
-        module: wait_for host={{ master_ip }} search_regex=OpenSSH port=22 delay=5
-      become: no
-      tags: ["live"]
-
-    - name: Make sure only user key is autorised on the VMs via NFS
-      authorized_key: user={{ ansible_user }} key="{{lookup('env','ssh_key')}}" exclusive=yes state=present
-      tags: ['live']
