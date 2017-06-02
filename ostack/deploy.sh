@@ -12,6 +12,9 @@ cd ostack/terraform || exit
 terraform apply -parallelism=10 -input=false -state=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate'
 cd ../..
 
+# Extract master ip from
+master_ip=$(terraform output -state=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' MASTER_IP)
+
 # Extract volumes mapping from TF state file
 ./ostack/volume_parser.py $PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' $PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/ostack_volumes_mapping.json'
 
@@ -21,7 +24,7 @@ ssh-add $PRIVATE_KEY &> /dev/null
 
 # Launch Ansible
 cd ostack/ansible || exit
-TF_STATE=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "bastion_ip=$bastion_ip" --tags=live -u centos -b deployment.yml
+TF_STATE=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "master_ip=$master_ip" --tags=live -u centos -b deployment.yml
 
 # Kill local ssh-agent
 eval "$(ssh-agent -k)" &> /dev/null

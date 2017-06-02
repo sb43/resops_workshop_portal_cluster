@@ -27,6 +27,12 @@ resource "openstack_compute_instance_v2" "openlava_master" {
   }
 }
 
+resource "openstack_compute_floatingip_associate_v2" "openlava_master_float_attach" {
+  floating_ip = "${openstack_networking_floatingip_v2.openlava_floatip.address}"
+  instance_id = "${openstack_compute_instance_v2.openlava_master.id}"
+  fixed_ip    = "${openstack_compute_instance_v2.openlava_master.network.0.fixed_ip_v4}"
+}
+
 resource "openstack_blockstorage_volume_v2" "homes_volume" {
   name        = "${var.name}-homes"
   description = "Volume storing user homes for the ${var.name} cluster"

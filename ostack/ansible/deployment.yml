@@ -9,15 +9,12 @@
   tasks:
     - name: Wait for the bastion node
       local_action:
-        module: wait_for host="{{ bastion_ip }}" search_regex=OpenSSH port=22 delay=5
+        module: wait_for host="{{ master_ip }}" search_regex=OpenSSH port=22 delay=5
       tags: ["live"]
-
-    - name: debug
-      debug: msg="{{ bastion_ip }}"
 
     - name: Waiting until SSH allows login on Master
       local_action:
-        module: shell ssh -tt -o ConnectTimeout=5 -o ControlMaster=no -o StrictHostKeyChecking=no centos@{{ groups['openlava_master'][0] }} echo "\$HOME ready"
+        module: shell ssh -tt -o ConnectTimeout=5 -o ControlMaster=no -o StrictHostKeyChecking=no centos@{{ master_ip }} echo "\$HOME ready"
       register: ssh_conn
       changed_when: false
       failed_when: false
@@ -273,7 +270,7 @@
         - { nfspath: "/exports/data", nfsmount: "/data"}
 
     - name: Allow users in group pipelines to access and /data
-      file: path={{ item }} owner="root" group="pipelines" mode="2770"
+      file: path={{ item }} owner="root" group="pipelines" mode="02770"
       with_items:
         - "/data"
       tags: ['live']
@@ -304,4 +301,10 @@
       action: service name=sshd state=restarted
       become: yes
       when: sshd_max_sessions.changed or sshd_max_startups.changed
+      tags: ["live"]
+
+    - name: Wait for SSH to come back
+      local_action:
+        module: wait_for host={{ master_ip }} search_regex=OpenSSH port=22 delay=5
+      become: no
       tags: ["live"]
