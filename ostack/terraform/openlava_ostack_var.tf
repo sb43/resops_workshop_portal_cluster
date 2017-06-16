@@ -31,7 +31,7 @@ variable "master_image_id" {
   type        = "string"
   description = "The pre-baked image for the master node"
 
-  default = "7b5fea5e-7a75-46de-a1c4-5e7fae18eb85"
+  default = "1f7780b7-cffa-4ea3-adb7-abdc7e62683b"
 }
 
 variable "node_image_id" {
