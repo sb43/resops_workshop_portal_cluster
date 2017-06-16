@@ -23,8 +23,8 @@ eval "$(ssh-agent -s)" &> /dev/null
 ssh-add $PRIVATE_KEY &> /dev/null
 
 # Launch Ansible
-cd ostack/ansible || exit
-TF_STATE=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "master_ip=$master_ip" -u centos -b deployment.yml
+#cd ostack/ansible || exit
+#TF_STATE=$PORTAL_DEPLOYMENTS_ROOT'/'$PORTAL_DEPLOYMENT_REFERENCE'/terraform.tfstate' ansible-playbook -i /usr/local/bin/terraform-inventory --extra-vars "master_ip=$master_ip" -u centos -b deployment.yml
 
 # Kill local ssh-agent
 eval "$(ssh-agent -k)" &> /dev/null
